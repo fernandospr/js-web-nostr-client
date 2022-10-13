@@ -5,6 +5,13 @@
     <script src="https://bitcoincore.tech/apps/bitcoinjs-ui/lib/bitcoinjs-lib.js"></script>
     <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
     <script src="https://bundle.run/browserify-cipher@1.0.1"></script>
+    <style>
+      table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        text-align: left;
+      }
+    </style>
   </head>
   <body>
     <form onsubmit="generate();return false">
@@ -31,7 +38,7 @@
       <input type="submit" value="Send"/>
     </form>
     </br>
-    <table id="messages" style="text-align: left;"></table>
+    <table id="messages"></table>
 
     <script type="text/javascript">
       function getPublicKey() {
@@ -71,7 +78,7 @@
         table.replaceChildren();
         var headerRow = table.insertRow();
         appendHeader("Date", headerRow);
-        appendHeader("To", headerRow);
+        appendHeader("From", headerRow);
         appendHeader("To", headerRow);
         appendHeader("Message", headerRow);
       }
@@ -89,14 +96,10 @@
         var fromCell = row.insertCell(1);
         var toCell = row.insertCell(2);
         var msgCell = row.insertCell(3);
-        appendPreTag(created_at, dateCell);
-        appendPreTag(pubkey, fromCell);
-        var destinationPubKey = getDestinationPublicKeyFromTags(tags)
-        if (destinationPubKey) {
-          appendPreTag(destinationPubKey, toCell);
-        } else {
-          appendPreTag("PUBLIC", toCell);
-        }
+        appendPreTag(dateToString(created_at), dateCell);
+        appendPreTag(prettyFormatKey(pubkey), fromCell);
+        var destinationPubKey = getDestinationPublicKeyFromTags(tags);
+        appendPreTag(prettyFormatKey(destinationPubKey), toCell);
         appendPreTag(content, msgCell);
       }
 
@@ -287,6 +290,18 @@
         );
         var decryptedMessage = decipher.update(emsg, "base64");
         return decryptedMessage + decipher.final("utf8");
+      }
+
+      function dateToString(unixTimestamp) {
+        return new Date(unixTimestamp * 1000).toLocaleString();
+      }
+
+      function prettyFormatKey(key) {
+        if (key) {
+          return key.slice(0, 4) + "..." + key.slice(-4);
+        } else {
+          return "PUBLIC";
+        }
       }
     </script>
   </body>
