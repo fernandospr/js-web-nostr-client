@@ -24,8 +24,9 @@
     
     Input a relay url (choose from the <a href="https://nostr-registry.netlify.app/" target="_blank">Nostr Relay Registry</a>):</br>
     <form onsubmit="connect();return false">
-      <input type="text" size="50" id="relay_url" value="wss://relay.nostr.info" placeholder="Relay Url"/>
-      <input type="submit" value="Connect"/>
+      <input type="text" size="30" id="relay_url" value="wss://relay.nostr.info" placeholder="Relay Url"/>
+      <input id="connectButton" type="submit" value="Connect"/>
+      <input id="disconnectButton" hidden="true" type="button" value="Disconnect" onclick="disconnect()" />
     </form>
     </br>
     
@@ -138,6 +139,12 @@
         setPrivateKey(privKey);
       }
 
+      function disconnect() {
+        if (!socket) return;
+
+        socket.close();
+      }
+
       function connect() {
         if (getPublicKey().length < 1 || getPrivateKey().length < 1) {
           alert("Generate or input public/private keys.");
@@ -174,11 +181,16 @@
 
         socket.addEventListener('close', async function(e) {
           console.log("Disconnected");
+          document.getElementById('connectButton').hidden = false;
+          document.getElementById('disconnectButton').hidden = true;
         })
 
         socket.addEventListener('open', async function(e) {
           console.log("Connected to " + relayUrl);
           console.log("Events (Nostr Gateway):", "https://nostr.com/p/" + getPublicKey());
+          document.getElementById('connectButton').hidden = true;
+          document.getElementById('disconnectButton').hidden = false;
+
 
           var subId = bitcoinjs.ECPair.makeRandom().privateKey.toString("hex");
           var authorFilter = { "authors": [getPublicKey()] };
