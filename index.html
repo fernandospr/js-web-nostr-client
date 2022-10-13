@@ -74,13 +74,10 @@
       }
 
       function clearMessages() {
+        messages = [];
+
         var table = document.getElementById('messages');
         table.replaceChildren();
-        var headerRow = table.insertRow();
-        appendHeader("Date", headerRow);
-        appendHeader("From", headerRow);
-        appendHeader("To", headerRow);
-        appendHeader("Message", headerRow);
       }
 
       function appendHeader(text, row) {
@@ -90,17 +87,35 @@
       }
 
       function appendMessage(content, pubkey, created_at, tags) {
-        var table = document.getElementById("messages");
-        var row = table.insertRow(1);
-        var dateCell = row.insertCell(0);
-        var fromCell = row.insertCell(1);
-        var toCell = row.insertCell(2);
-        var msgCell = row.insertCell(3);
-        appendPreTag(dateToString(created_at), dateCell);
-        appendPreTag(prettyFormatKey(pubkey), fromCell);
-        var destinationPubKey = getDestinationPublicKeyFromTags(tags);
-        appendPreTag(prettyFormatKey(destinationPubKey), toCell);
-        appendPreTag(content, msgCell);
+        messages.push(
+          { 
+            'date': created_at,
+            'from': pubkey,
+            'to': getDestinationPublicKeyFromTags(tags),
+            'message': content
+          }
+        );
+        messages = messages.sort((a, b) => (a.date < b.date) ? 1 : -1);
+
+        var table = document.getElementById('messages');
+        table.replaceChildren();
+        var headerRow = table.insertRow();
+        appendHeader("Date", headerRow);
+        appendHeader("From", headerRow);
+        appendHeader("To", headerRow);
+        appendHeader("Message", headerRow);
+
+        messages.forEach(element => {
+          var row = table.insertRow();
+          var dateCell = row.insertCell();
+          var fromCell = row.insertCell();
+          var toCell = row.insertCell();
+          var msgCell = row.insertCell();
+          appendPreTag(dateToString(element.date), dateCell);
+          appendPreTag(prettyFormatKey(element.from), fromCell);
+          appendPreTag(prettyFormatKey(element.to), toCell);
+          appendPreTag(element.message, msgCell);
+        });
       }
 
       function appendPreTag(text, cell) {
@@ -111,6 +126,7 @@
 
 
       var socket;
+      var messages = [];
 
       function generate() {
         var keypair = bitcoinjs.ECPair.makeRandom();
