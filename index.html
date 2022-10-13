@@ -66,11 +66,13 @@
       }
 
       function clearMessages() {
-        document.getElementById('messages').innerHTML = "";
+        document.getElementById('messages').replaceChildren();
       }
 
       function appendMessage(content) {
-        document.getElementById('messages').innerHTML += content + "</br>";
+        var p = document.createElement('pre');
+        p.textContent = content;
+        document.getElementById('messages').appendChild(p);
       }
 
 
