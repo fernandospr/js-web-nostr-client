@@ -31,7 +31,8 @@
       <input type="submit" value="Send"/>
     </form>
     </br>
-    <div id="messages"></div>
+    <table id="messages" style="text-align: left;"></table>
+
     <script type="text/javascript">
       function getPublicKey() {
         return document.getElementById('public_key').value;
@@ -66,13 +67,43 @@
       }
 
       function clearMessages() {
-        document.getElementById('messages').replaceChildren();
+        var table = document.getElementById('messages');
+        table.replaceChildren();
+        var headerRow = table.insertRow();
+        appendHeader("Date", headerRow);
+        appendHeader("To", headerRow);
+        appendHeader("To", headerRow);
+        appendHeader("Message", headerRow);
       }
 
-      function appendMessage(content) {
-        var p = document.createElement('pre');
-        p.textContent = content;
-        document.getElementById('messages').appendChild(p);
+      function appendHeader(text, row) {
+        var header = document.createElement("th");
+        header.textContent = text;
+        row.appendChild(header);
+      }
+
+      function appendMessage(content, pubkey, created_at, tags) {
+        var table = document.getElementById("messages");
+        var row = table.insertRow(1);
+        var dateCell = row.insertCell(0);
+        var fromCell = row.insertCell(1);
+        var toCell = row.insertCell(2);
+        var msgCell = row.insertCell(3);
+        appendPreTag(created_at, dateCell);
+        appendPreTag(pubkey, fromCell);
+        var destinationPubKey = getDestinationPublicKeyFromTags(tags)
+        if (destinationPubKey) {
+          appendPreTag(destinationPubKey, toCell);
+        } else {
+          appendPreTag("PUBLIC", toCell);
+        }
+        appendPreTag(content, msgCell);
+      }
+
+      function appendPreTag(text, cell) {
+        var pre = document.createElement('pre');
+        pre.textContent = text;
+        cell.appendChild(pre);
       }
 
 
@@ -104,26 +135,21 @@
           var [type, subId, event] = JSON.parse(message.data);
           if (!event) return;
           console.log('Event:', event);
-          var {kind, content, tags, pubkey} = event || {};
+          var {kind, content, tags, pubkey, created_at} = event || {};
           if (kind === 1) {
-            appendMessage(content);
+            appendMessage(content, pubkey, created_at, tags);
           } else if (kind === 4) {
             if (pubkey == getPublicKey()) {
               // I'm the sender of this encrypted direct message
               // Decrypt content using private key and destination public key
-              var i; for (i = 0; i < tags.length; i++) {
-                if (tags[i][0] === "p") {
-                  var destinationPubKey = tags[i][1];
-                  content = await decrypt(getPrivateKey(), destinationPubKey, content);
-                  break;
-                }
-              }
+              var destinationPubKey = getDestinationPublicKeyFromTags(tags);
+              content = await decrypt(getPrivateKey(), destinationPubKey, content);
             } else {
               // I'm the destination of this encrypted direct message
               // Decrypt content using my private key and the sender public key
               content = await decrypt(getPrivateKey(), pubkey, content);
             }
-            appendMessage(content);
+            appendMessage(content, pubkey, created_at, tags);
           }
         })
 
@@ -142,6 +168,15 @@
           console.log('Subscription:', subscription);
           socket.send(JSON.stringify(subscription));
         });
+      }
+
+      function getDestinationPublicKeyFromTags(tags) {
+        var i; for (i = 0; i < tags.length; i++) {
+          if (tags[i][0] === "p") {
+            return tags[i][1];
+          }
+        }
+        return "";
       }
 
       function send() {
