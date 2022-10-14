@@ -81,7 +81,7 @@
         table.replaceChildren();
       }
 
-      function appendHeader(text, row) {
+      function appendHeader(row, text) {
         var header = document.createElement("th");
         header.textContent = text;
         row.appendChild(header);
@@ -101,28 +101,43 @@
         var table = document.getElementById('messages');
         table.replaceChildren();
         var headerRow = table.insertRow();
-        appendHeader("Date", headerRow);
-        appendHeader("From", headerRow);
-        appendHeader("To", headerRow);
-        appendHeader("Message", headerRow);
+        appendHeader(headerRow, "Date");
+        appendHeader(headerRow, "From");
+        appendHeader(headerRow, "To");
+        appendHeader(headerRow, "Message");
 
         messages.forEach(element => {
           var row = table.insertRow();
-          var dateCell = row.insertCell();
-          var fromCell = row.insertCell();
-          var toCell = row.insertCell();
-          var msgCell = row.insertCell();
-          appendPreTag(dateToString(element.date), dateCell);
-          appendPreTag(prettyFormatKey(element.from), fromCell);
-          appendPreTag(prettyFormatKey(element.to), toCell);
-          appendPreTag(element.message, msgCell);
+          insertCell(row, dateToString(element.date));
+          insertCell(row, prettyFormatKey(element.from), element.from);
+          insertCell(row, prettyFormatKey(element.to), element.to);
+          insertCell(row, element.message);
         });
       }
 
-      function appendPreTag(text, cell) {
+      function insertCell(row, text, mouseovertext) {
+        var cell = row.insertCell();
+        appendPreTag(cell, text, mouseovertext);
+      }
+
+      function appendPreTag(cell, text, mouseovertext) {
         var pre = document.createElement('pre');
         pre.textContent = text;
         cell.appendChild(pre);
+        var preMouseOverText = document.createElement('pre');
+        preMouseOverText.textContent = mouseovertext;
+        preMouseOverText.hidden = true;
+        cell.appendChild(preMouseOverText);
+        if (mouseovertext) {
+          cell.addEventListener("mouseover", function(event) {
+            preMouseOverText.hidden = false;
+            pre.hidden = true;
+          });
+          cell.addEventListener("mouseout", function(event) {
+            preMouseOverText.hidden = true;
+            pre.hidden = false;
+          });
+        }
       }
 
 
@@ -177,13 +192,13 @@
             }
             appendMessage(content, pubkey, created_at, tags);
           }
-        })
+        });
 
         socket.addEventListener('close', async function(e) {
           console.log("Disconnected");
           document.getElementById('connectButton').hidden = false;
           document.getElementById('disconnectButton').hidden = true;
-        })
+        });
 
         socket.addEventListener('open', async function(e) {
           console.log("Connected to " + relayUrl);
@@ -270,7 +285,7 @@
           event['kind'],
           event['tags'],
           event['content']
-        ])
+        ]);
         event.id = sha256(eventData).toString('hex');
         event.sig = await schnorr.sign(event.id, privateKey);
         return event;
