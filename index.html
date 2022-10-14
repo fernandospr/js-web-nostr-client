@@ -176,7 +176,8 @@
           var [type, subId, event] = JSON.parse(message.data);
           if (!event) return;
           console.log('Event:', event);
-          var {kind, content, tags, pubkey, created_at} = event || {};
+          var {kind, content, tags, pubkey, created_at, id} = event || {};
+          console.log('Event (Nostr Gateway):', "https://nostr.com/e/" + id);
           if (kind === 1) {
             appendMessage(content, pubkey, created_at, tags);
           } else if (kind === 4) {
@@ -256,7 +257,6 @@
         var signedEvent = await getSignedEvent(event, privkey);
         console.log('Signed Event:', signedEvent);
         socket.send(JSON.stringify(["EVENT", signedEvent]));
-        console.log('Event (Nostr Gateway):', "https://nostr.com/e/" + signedEvent.id);
       }
 
       // https://github.com/nostr-protocol/nips/blob/master/04.md
@@ -272,7 +272,6 @@
         var signedEvent = await getSignedEvent(event, privkey);
         console.log('Signed Event:', signedEvent);
         socket.send(JSON.stringify([ "EVENT", signedEvent ]));
-        console.log('Event (Nostr Gateway):', "https://nostr.com/e/" + signedEvent.id);
       }
 
       async function getSignedEvent(event, privateKey) {
